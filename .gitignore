@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+server/venv/
+
+# Local configuration and runtime data
+server/.env
+client/.env.local
+server/college_rag.db
+server/qdrant_db/
+server/uploads/
+uploads/
+
+# Node / Next.js
+client/node_modules/
+server/node_modules/
+client/.next/
+client/.next-build/
+client/out/
