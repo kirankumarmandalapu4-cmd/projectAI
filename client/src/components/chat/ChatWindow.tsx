@@ -3,6 +3,7 @@ import { ChatMessage, ChatMessageData } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { ConversationList, ConversationItem } from './ConversationList';
+import { KnowledgeContribution } from './KnowledgeContribution';
 import { Loader2, Sidebar as SidebarIcon, Download } from 'lucide-react';
 import api from '../../services/api';
 import { CollectionItem } from '../documents/CollectionManager';
@@ -170,6 +171,9 @@ export const ChatWindow: React.FC = () => {
           <div className="flex items-center gap-2">
             <button onClick={exportConversation} disabled={!messages.length} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-40" title="Export conversation"><Download className="w-3.5 h-3.5" /> Export</button>
           </div>
+        </div>
+        <div className="px-4 md:px-8 pt-3">
+          <KnowledgeContribution />
         </div>
         <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6">
           {messages.length === 0 ? (

@@ -25,6 +25,12 @@ const api = axios.create({
 // Request interceptor to attach JWT token
 api.interceptors.request.use(
   (config) => {
+    // Axios must let the browser set the multipart boundary for file uploads.
+    // The instance default is JSON for normal requests, so remove it for FormData.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       if (token) {

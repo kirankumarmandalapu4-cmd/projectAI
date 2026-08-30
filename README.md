@@ -132,7 +132,7 @@ projectAI/
 
 1. Open **`http://localhost:8000/api/health`** and confirm the response status is `HEALTHY`.
 2. Open **`http://localhost:3000`** and sign in with one of the demo accounts below.
-3. As the admin, upload a `.pdf`, `.doc`/`.docx`, text/data/web resource, or image from **Documents**.
+3. As the admin, upload a `.pdf`, `.doc`/`.docx`, text/data/web resource, or image from **Documents**. Any signed-in user can also contribute a resource from the Chatbot page.
 4. Wait for its status to become `COMPLETED`, then ask a question supported by that document in **Chatbot**.
 5. Confirm the answer shows `GROUNDED` and a source card with the document name and page number.
 
@@ -144,7 +144,7 @@ When the FastAPI server starts, it automatically seeds initial accounts into the
 
 | Role | Email | Password | Access Rights |
 | :--- | :--- | :--- | :--- |
-| **Student** | `student@college.edu` | `student123` | Chatbot, Ask Questions, View Sources, Give Feedback |
+| **Student** | `student@college.edu` | `student123` | Chatbot, Contribute Resources, Ask Questions, View Sources, Give Feedback |
 | **Admin** | `admin@college.edu` | `admin123` | Full Access + Document Management + Admin Analytics Dashboard |
 
 ---
@@ -170,7 +170,7 @@ All 7 test suites verify:
 
 1. Open **`http://localhost:3000`** in your browser.
 2. Click **Log In** and select **Demo Admin** (`admin@college.edu` / `admin123`).
-3. Go to **Documents** page (`/documents`) and upload a sample college notice, syllabus, text/data resource, Word file, or image.
-4. Switch to **Chatbot** (`/chat`) and ask a question regarding the uploaded document (e.g. *"What are the hostel fee rules?"*).
+3. Go to **Documents** page (`/documents`) and upload a sample college notice, syllabus, text/data resource, Word file, or image. Alternatively, open **Chatbot** (`/chat`) and expand **Contribute a resource to the knowledge base**.
+4. Ask a question regarding the uploaded document (e.g. *"What are the hostel fee rules?"*).
 5. Notice the **Grounded Status Badge** (`100% Grounded in Knowledge Base`) and exact **Source Citation Cards** displaying the file name and page number!
 6. Visit **Admin Dashboard** (`/admin`) to inspect live query analytics, average response times, user satisfaction, and system health status.

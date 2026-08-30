@@ -94,7 +94,7 @@ async def upload_document(
     version: str = Form("1.0"),
     collection_id: Optional[str] = Form(None),
     background_tasks: BackgroundTasks = None,
-    current_admin: User = Depends(get_current_active_admin),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Upload a supported resource and trigger RAG vector ingestion."""
@@ -160,7 +160,7 @@ async def upload_document(
         version=version,
         collection_id=collection_id,
         is_active=True,
-        uploaded_by=current_admin.id
+        uploaded_by=current_user.id
     )
     db.add(doc)
     db.commit()
