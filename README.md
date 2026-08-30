@@ -17,7 +17,7 @@ It enables students to ask natural-language questions about college admissions, 
 - **Grounding Safeguards**: Insufficient-context and no-relevant-information responses, untrusted-document prompt handling, and source display.
 - **Authentication and Roles**: JWT sessions, bcrypt password hashing, and `STUDENT`, `FACULTY`, and `ADMIN` roles.
 - **Admin Management and Analytics**: Metadata editing, reprocessing, version replacement, deletion, collections, usage metrics, feedback, and system health.
-- **Deployment**: Working Next.js frontend on Vercel and FastAPI backend on Render Free for demonstrations.
+- **Deployment**: Working Next.js frontend on Vercel and FastAPI backend on Render Free for demonstrations, with PostgreSQL migrations, Supabase Storage, and hosted Qdrant configuration for persistent deployments.
 
 ### ✅ Optional features — implemented, with browser/provider limitations
 
@@ -25,7 +25,7 @@ It enables students to ask natural-language questions about college admissions, 
 
 ### ⚠️ Deliberate demo limitations
 
-- Render Free uses ephemeral storage, so uploaded resources and conversations can disappear after a restart or spin-down.
+- The default Render Blueprint is intentionally zero-cost and uses local SQLite/Qdrant storage; uploaded resources and conversations can disappear after a restart or spin-down. Configure external PostgreSQL, Supabase Storage, and Qdrant Cloud to enable persistent mode.
 - Gemini embeddings and answer generation are optional. Without an API key, deterministic local embeddings and grounded extractive synthesis are used.
 - Streaming responses, PPTX extraction, document approval workflows, rate limiting, and formal RAG benchmark evaluation are not included.
 
@@ -77,6 +77,25 @@ projectAI/
 
 ---
 
+### Persistent deployment configuration
+
+For restart-safe deployments, set these variables in Render's secret environment settings:
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | Supabase PostgreSQL connection string |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only Supabase Storage key; never expose it in the frontend |
+| `SUPABASE_STORAGE_BUCKET` | Private bucket for uploaded resources, normally `college-documents` |
+| `QDRANT_URL` | Qdrant Cloud cluster URL |
+| `QDRANT_API_KEY` | Qdrant Cloud API key |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Optional first administrator account |
+| `DEMO_STUDENT_EMAIL` / `DEMO_STUDENT_PASSWORD` | Optional demo student account |
+
+The application runs `alembic upgrade head` automatically for external PostgreSQL databases. SQLite keeps the existing local development path. Existing local files are not automatically copied to external services; upload them again after switching storage mode.
+
+Do not commit real values to `.env`, `.env.local`, Vercel, or the repository. The frontend's optional `NEXT_PUBLIC_DEMO_*_EMAIL` variables only prefill an email; they never carry a password.
+
 ### Step 1: Backend Setup (FastAPI)
 
 1. **Navigate to the server directory**:
@@ -97,7 +116,7 @@ projectAI/
    ```
 
 4. **Environment Configuration**:
-   The backend comes pre-configured with SQLite and local folder Qdrant for zero-dependency out-of-the-box running in `.env`. If `.env` is missing, copy `.env.example` to `.env` and set `JWT_SECRET` to a long random value.
+   The backend comes pre-configured with SQLite and local folder Qdrant for zero-dependency out-of-the-box running in `.env`. If `.env` is missing, copy `.env.example` to `.env`, set `JWT_SECRET` to a long random value, and optionally set `ADMIN_EMAIL`/`ADMIN_PASSWORD` for a local administrator account.
    
    If you have a Google Gemini API Key, add it to `server/.env`:
    ```env
@@ -149,14 +168,14 @@ projectAI/
 
 ---
 
-## 🔑 Pre-seeded Default Accounts
+## 🔑 Account provisioning
 
-When the FastAPI server starts, it automatically seeds initial accounts into the database. Public registration creates student or faculty accounts; administrator access uses the seeded admin account (or must be provisioned directly by an administrator).
+When `ADMIN_EMAIL` and `ADMIN_PASSWORD` are supplied in the backend environment, the FastAPI server provisions that administrator account on first start. `DEMO_STUDENT_EMAIL` and `DEMO_STUDENT_PASSWORD` work the same way for an optional student account. Public registration creates student or faculty accounts; administrator accounts cannot be created through public registration.
 
 | Role | Email | Password | Access Rights |
 | :--- | :--- | :--- | :--- |
-| **Student** | `student@college.edu` | `student123` | Chatbot, Contribute Resources, Ask Questions, View Sources, Give Feedback |
-| **Admin** | `admin@college.edu` | `admin123` | Full Access + Document Management + Admin Analytics Dashboard |
+| **Student** | `DEMO_STUDENT_EMAIL` | `DEMO_STUDENT_PASSWORD` | Chatbot, Contribute Resources, Ask Questions, View Sources, Give Feedback |
+| **Admin** | `ADMIN_EMAIL` | `ADMIN_PASSWORD` | Full Access + Document Management + Admin Analytics Dashboard |
 
 ---
 
@@ -168,7 +187,7 @@ To run the automated backend test suite:
 python -m pytest server/tests
 ```
 
-The 12-test suite across authentication, ingestion, RAG, and retrieval modules verifies:
+The 14-test suite across authentication, ingestion, storage, RAG, and retrieval modules verifies:
 - Password hashing & JWT generation
 - Text cleaner & recursive document chunker
 - Embedding vector dimensions
@@ -180,7 +199,7 @@ The 12-test suite across authentication, ingestion, RAG, and retrieval modules v
 ## 📊 Quick Walkthrough Guide
 
 1. Open **`http://localhost:3000`** in your browser.
-2. Click **Log In** and select **Demo Admin** (`admin@college.edu` / `admin123`).
+2. Register a student/faculty account, or sign in with the administrator credentials configured in `server/.env`.
 3. Go to **Documents** page (`/documents`) and upload a sample college notice, syllabus, text/data resource, Word file, or image. Alternatively, open **Chatbot** (`/chat`) and expand **Contribute a resource to the knowledge base**.
 4. Ask a question regarding the uploaded document (e.g. *"What are the hostel fee rules?"*).
 5. Notice the **Grounded Status Badge** (`100% Grounded in Knowledge Base`) and exact **Source Citation Cards** displaying the file name and page number!

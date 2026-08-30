@@ -8,12 +8,18 @@ SERVER_DIR = Path(__file__).resolve().parents[2]
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./college_rag.db"
+    AUTO_MIGRATE: bool = True
     
     # Vector DB
     QDRANT_URL: Optional[str] = None
     QDRANT_API_KEY: Optional[str] = None
     QDRANT_PATH: Optional[str] = None
     QDRANT_COLLECTION_NAME: str = "college_chunks"
+
+    # Supabase Storage (optional; local filesystem remains the development fallback)
+    SUPABASE_URL: Optional[str] = None
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+    SUPABASE_STORAGE_BUCKET: str = "college-documents"
     
     # LLM
     LLM_PROVIDER: str = "gemini"
@@ -30,6 +36,14 @@ class Settings(BaseSettings):
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440
+
+    # Optional seed accounts. Set these in the deployment platform, never in source.
+    ADMIN_EMAIL: Optional[str] = None
+    ADMIN_PASSWORD: Optional[str] = None
+    ADMIN_NAME: str = "College Administrator"
+    DEMO_STUDENT_EMAIL: Optional[str] = None
+    DEMO_STUDENT_PASSWORD: Optional[str] = None
+    DEMO_STUDENT_NAME: str = "Demo Student"
 
     # Web application
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
@@ -62,6 +76,10 @@ def _resolve_local_path(value: str) -> str:
 if settings.DATABASE_URL.startswith("sqlite:///./"):
     database_path = SERVER_DIR / settings.DATABASE_URL.removeprefix("sqlite:///./")
     settings.DATABASE_URL = f"sqlite:///{database_path.as_posix()}"
+elif settings.DATABASE_URL.startswith("postgres://"):
+    settings.DATABASE_URL = settings.DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif settings.DATABASE_URL.startswith("postgresql://"):
+    settings.DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 settings.UPLOAD_DIR = _resolve_local_path(settings.UPLOAD_DIR)
 

@@ -1,12 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.database.postgres import Base, engine, SessionLocal, ensure_sqlite_schema
+from app.database.postgres import Base, engine, SessionLocal, ensure_sqlite_schema, run_database_migrations
 from app.models.user import User, UserRole
 from app.core.security import hash_password
+from app.services.storage import document_storage
 from app.api import auth, chat, documents, collections, feedback, admin
 
-# Create DB tables
+# Apply repeatable migrations for external databases before the fallback
+# create_all used by the zero-configuration SQLite development setup.
+run_database_migrations()
 Base.metadata.create_all(bind=engine)
 ensure_sqlite_schema()
 
@@ -35,30 +38,45 @@ app.include_router(admin.router)
 
 @app.on_event("startup")
 def startup_db_seed():
-    """Seed initial default Administrator and Student accounts if empty."""
+    """Provision optional accounts from deployment environment variables."""
     db = SessionLocal()
     try:
-        admin_user = db.query(User).filter(User.email == "admin@college.edu").first()
-        if not admin_user:
-            admin_user = User(
-                name="College Administrator",
-                email="admin@college.edu",
-                password_hash=hash_password("admin123"),
-                role=UserRole.ADMIN.value
-            )
-            db.add(admin_user)
-            print("[Seed] Created default Admin account: admin@college.edu / admin123")
+        configured_accounts = [
+            (
+                settings.ADMIN_EMAIL,
+                settings.ADMIN_PASSWORD,
+                settings.ADMIN_NAME,
+                UserRole.ADMIN.value,
+            ),
+            (
+                settings.DEMO_STUDENT_EMAIL,
+                settings.DEMO_STUDENT_PASSWORD,
+                settings.DEMO_STUDENT_NAME,
+                UserRole.STUDENT.value,
+            ),
+        ]
 
-        student_user = db.query(User).filter(User.email == "student@college.edu").first()
-        if not student_user:
-            student_user = User(
-                name="Demo Student",
-                email="student@college.edu",
-                password_hash=hash_password("student123"),
-                role=UserRole.STUDENT.value
-            )
-            db.add(student_user)
-            print("[Seed] Created default Student account: student@college.edu / student123")
+        for email, password, name, role in configured_accounts:
+            if not email and not password:
+                continue
+            if not email or not password:
+                print(f"[Seed] Skipping incomplete {role} account configuration.")
+                continue
+            normalized_email = email.strip().lower()
+            if not normalized_email:
+                continue
+            existing_user = db.query(User).filter(User.email == normalized_email).first()
+            if not existing_user:
+                db.add(User(
+                    name=name,
+                    email=normalized_email,
+                    password_hash=hash_password(password),
+                    role=role,
+                ))
+                print(f"[Seed] Provisioned configured {role} account: {normalized_email}")
+
+        if settings.ENVIRONMENT.lower() == "production" and not settings.ADMIN_EMAIL:
+            print("[Seed] ADMIN_EMAIL/ADMIN_PASSWORD are not configured; no admin account will be created.")
 
         db.commit()
     except Exception as e:
@@ -73,7 +91,10 @@ def health_check():
         "status": "HEALTHY",
         "service": "RAG-Based College Chatbot API",
         "version": "1.0.0",
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
+        "database": "sqlite" if settings.DATABASE_URL.startswith("sqlite") else "postgresql",
+        "documentStorage": "supabase" if document_storage.is_remote else "local",
+        "vectorStorage": "qdrant-cloud" if settings.QDRANT_URL else "qdrant-local",
     }
 
 if __name__ == "__main__":

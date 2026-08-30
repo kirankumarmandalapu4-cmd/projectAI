@@ -5,11 +5,11 @@ This project is a **full-stack** app with separate frontend and backend services
 | Component | Tech | Recommended Host |
 |-----------|------|------------------|
 | Frontend | Next.js 14 | **Vercel** |
-| Backend | FastAPI + SQLite + Qdrant | **Render Free** (demo Web Service) |
+| Backend | FastAPI + PostgreSQL/SQLite + Qdrant | **Render Free** (demo Web Service) |
 
-> **Free demo limitation:** Render Free has an ephemeral filesystem. Uploaded documents,
-> SQLite data, Qdrant vectors, users, and conversations can be lost when the service
-> restarts or spins down. Use a paid plan with a persistent disk for production data.
+> **Free demo default:** The included Blueprint runs without paid infrastructure, but its
+> local filesystem is ephemeral. For restart-safe data on the free compute service, connect
+> external PostgreSQL, Supabase Storage, and Qdrant Cloud using the variables below.
 
 ---
 
@@ -46,6 +46,10 @@ Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository.
    | `CORS_ORIGINS` | `https://your-app.vercel.app` |
    | `LLM_API_KEY` | Your Gemini API key (optional) |
    | `EMBEDDING_PROVIDER` | `local` (works without API key) |
+   | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Optional administrator credentials |
+   | `DATABASE_URL` | Supabase PostgreSQL URL for persistence |
+   | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Supabase Storage configuration |
+   | `QDRANT_URL` / `QDRANT_API_KEY` | Qdrant Cloud configuration |
 
 5. Deploy. Note your API URL, e.g. `https://college-rag-api.onrender.com`.
 
@@ -69,7 +73,7 @@ Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository.
 
 1. Update Render `CORS_ORIGINS` to include your final Vercel URL.
 2. Open the Vercel app and confirm **API connected** badge in the header.
-3. Log in with `admin@college.edu` / `admin123`.
+3. Register an account or log in with the administrator credentials configured in Render.
 4. Upload a test document and ask a question in Chatbot.
 
 ---
@@ -77,7 +81,7 @@ Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository.
 ## Why This Split?
 
 - **Vercel** excels at Next.js static/SSR hosting with global CDN.
-- **Render Free** supports this backend for temporary demonstrations, but its filesystem is ephemeral.
+- **Render Free** supports this backend for demonstrations; external services provide persistence because its filesystem is ephemeral.
 - Vercel alone cannot host the FastAPI backend.
 
 ---

@@ -31,6 +31,9 @@ are available with documented browser or provider limitations. Items marked
 - Collections, department filters, metadata editing, active-version
   replacement, admin analytics, system health, local deployment, Vercel, and
   Render Free demo deployment.
+- Optional persistent deployment mode with Supabase PostgreSQL migrations,
+  Supabase Storage document objects, and Qdrant Cloud. The default free demo
+  remains local and ephemeral until these providers are configured.
 
 ### OPTIONAL • WORKING WITH LIMITATIONS
 
@@ -49,9 +52,10 @@ are available with documented browser or provider limitations. Items marked
 - Document approval/moderation workflow.
 - Rate limiting and formal RAG benchmark/evaluation dashboard.
 
-Render Free uses ephemeral storage; uploaded resources, vectors, SQLite data,
-and conversations may be lost after a restart or spin-down. Persistent
-production storage requires a paid service or external managed storage.
+The default Render Free configuration uses ephemeral local storage; uploaded
+resources, vectors, SQLite data, and conversations may be lost after a restart
+or spin-down. Persistent mode uses external managed services and is enabled by
+setting the provider variables in the deployment environment.
 
 ------------------------------------------------------------------------
 
@@ -1196,8 +1200,13 @@ Example:
 
 ``` env
 DATABASE_URL=
+AUTO_MIGRATE=true
 QDRANT_URL=
 QDRANT_API_KEY=
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_STORAGE_BUCKET=college-documents
 
 LLM_PROVIDER=
 LLM_API_KEY=
@@ -1217,6 +1226,11 @@ RETRIEVAL_SCORE_THRESHOLD=
 ```
 
 No API key, password, or secret may be hardcoded.
+
+Optional `ADMIN_EMAIL`/`ADMIN_PASSWORD` and
+`DEMO_STUDENT_EMAIL`/`DEMO_STUDENT_PASSWORD` variables provision accounts on
+startup. The frontend may use `NEXT_PUBLIC_DEMO_*_EMAIL` only to prefill an
+email; passwords are never shipped to the browser.
 
 ------------------------------------------------------------------------
 

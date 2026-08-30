@@ -1,3 +1,4 @@
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
@@ -42,3 +43,25 @@ def ensure_sqlite_schema() -> None:
         for name, definition in required_columns.items():
             if name not in existing:
                 connection.execute(text(f"ALTER TABLE documents ADD COLUMN {name} {definition}"))
+
+
+def run_database_migrations() -> None:
+    """Run Alembic migrations for external databases.
+
+    SQLite keeps the existing zero-config create/upgrade path. External databases
+    use migrations so schema changes are repeatable across Render restarts.
+    """
+    if settings.DATABASE_URL.startswith("sqlite") or not settings.AUTO_MIGRATE:
+        return
+
+    from alembic import command
+    from alembic.config import Config
+
+    alembic_config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+    existing_tables = set(inspect(engine).get_table_names())
+    if "alembic_version" not in existing_tables and {"users", "documents"}.issubset(existing_tables):
+        # A database created by the earlier create_all-only release already has
+        # the current schema. Baseline it instead of attempting to recreate tables.
+        command.stamp(alembic_config, "head")
+    else:
+        command.upgrade(alembic_config, "head")

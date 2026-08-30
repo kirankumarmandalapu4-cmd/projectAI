@@ -15,6 +15,8 @@ export default function LoginPage() {
   
   const { login } = useAuthStore();
   const router = useRouter();
+  const demoStudentEmail = process.env.NEXT_PUBLIC_DEMO_STUDENT_EMAIL;
+  const demoAdminEmail = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,26 +101,33 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo Account Quick Links */}
-        <div className="pt-2 border-t border-slate-800/80 space-y-2">
-          <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider block text-center">
-            Quick Demo Login
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => fillDemoAccount('student@college.edu', 'student123')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 font-medium transition"
-            >
-              Demo Student
-            </button>
-            <button
-              onClick={() => fillDemoAccount('admin@college.edu', 'admin123')}
-              className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-blue-400 font-medium transition"
-            >
-              Demo Admin
-            </button>
+        {/* Optional demo shortcuts are configured at build time and never
+            contain credentials in the repository. */}
+        {demoStudentEmail || demoAdminEmail ? (
+          <div className="pt-2 border-t border-slate-800/80 space-y-2">
+            <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider block text-center">
+              Quick Demo Login
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {demoStudentEmail ? (
+                <button
+                  onClick={() => fillDemoAccount(demoStudentEmail, '')}
+                  className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 font-medium transition"
+                >
+                  Demo Student
+                </button>
+              ) : null}
+              {demoAdminEmail ? (
+                <button
+                  onClick={() => fillDemoAccount(demoAdminEmail, '')}
+                  className="py-1.5 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-blue-400 font-medium transition"
+                >
+                  Demo Admin
+                </button>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <p className="text-center text-xs text-slate-400">
           Don't have an account?{' '}

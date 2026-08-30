@@ -9,11 +9,31 @@ services:
     envVars:
       - key: DATABASE_URL
         value: sqlite:////data/college_rag.db
+      - key: AUTO_MIGRATE
+        value: "true"
       - key: UPLOAD_DIR
         value: /data/uploads
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGINS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DEMO_STUDENT_EMAIL
+        sync: false
+      - key: DEMO_STUDENT_PASSWORD
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: college-documents
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
         sync: false
       - key: LLM_PROVIDER
         value: gemini

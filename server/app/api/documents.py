@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.rag.pipeline import rag_pipeline
 from app.rag.retrieval.vector_search import vector_search_service
 from app.services.document_insights import build_document_insights, summarize_document
+from app.services.storage import document_storage
 
 router = APIRouter(prefix="/api/documents", tags=["Document Management"])
 
@@ -45,11 +46,24 @@ def process_document_background(doc_id: str, file_path: str, file_type: str, db_
             "is_active": doc.is_active,
         }
 
-        page_count, chunk_count = rag_pipeline.process_and_index_document(file_path, file_type, doc_meta)
+        with document_storage.local_copy(file_path, file_type) as local_file_path:
+            page_count, chunk_count = rag_pipeline.process_and_index_document(local_file_path, file_type, doc_meta)
 
-        doc.page_count = page_count
-        doc.chunk_count = chunk_count
-        doc.summary = summarize_document(file_path, file_type)
+            doc.page_count = page_count
+            doc.chunk_count = chunk_count
+            doc.summary = summarize_document(local_file_path, file_type)
+
+            # Persist the source outside Render's ephemeral filesystem when
+            # Supabase Storage is configured. Local mode keeps the existing
+            # path-based behavior for zero-configuration development.
+            if document_storage.is_remote and not document_storage.is_remote_reference(doc.storage_url):
+                object_key = f"documents/{doc.id}_{Path(doc.original_filename).name}"
+                doc.storage_url = document_storage.upload_file(local_file_path, object_key)
+                try:
+                    Path(file_path).unlink(missing_ok=True)
+                except OSError:
+                    pass
+
         doc.status = DocumentStatus.COMPLETED.value
         db.commit()
         print(f"[Document Ingestion] Successfully processed '{doc.name}' ({chunk_count} chunks).")
@@ -199,7 +213,8 @@ def get_document_insights(
     doc = db.query(Document).filter(Document.id == doc_id).first()
     if not doc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found.")
-    insights = build_document_insights(doc.storage_url, doc.file_type)
+    with document_storage.local_copy(doc.storage_url, doc.file_type) as local_file_path:
+        insights = build_document_insights(local_file_path, doc.file_type)
     return {"documentId": doc.id, **insights}
 
 @router.put("/{doc_id}", response_model=DocumentResponse)
@@ -250,7 +265,12 @@ def delete_document(
     vector_search_service.delete_document_chunks(doc.id)
 
     # Delete local stored file
-    if os.path.exists(doc.storage_url):
+    if document_storage.is_remote_reference(doc.storage_url):
+        try:
+            document_storage.delete(doc.storage_url)
+        except Exception as e:
+            print(f"Error removing remote file {doc.storage_url}: {e}")
+    elif os.path.exists(doc.storage_url):
         try:
             os.remove(doc.storage_url)
         except Exception as e:
