@@ -6,19 +6,30 @@ It enables students to ask natural-language questions about college admissions, 
 
 ---
 
-## 🌟 Key Features
+## 🌟 Feature Status
+
+### ✅ Core features — implemented and verified
 
 - **Full-Stack Architecture**: Python FastAPI REST backend + Next.js React TypeScript frontend.
-- **RAG Vector Search**: Document chunking (500–800 tokens target, 100 token overlap) with Qdrant vector database embedding indexing.
-- **Source Citation Cards**: Grounded AI responses featuring verified document name, page number, section, and similarity match percentage.
-- **Zero-Hallucination Guardrails**: Detects when context is insufficient or ungrounded and safely declines rather than inventing college policies.
-- **Untrusted Document Security**: System prompts treat uploaded documents strictly as data references, protecting against prompt injection.
-- **Admin Resource Management**: PDF, DOC/DOCX, TXT, CSV, Markdown, JSON, HTML, RTF, and common image upload with OCR fallback, status tracking (`UPLOADED`, `PROCESSING`, `COMPLETED`, `FAILED`), re-indexing, and deletion.
-- **Admin Analytics Dashboard**: Live metrics tracking total users, documents, query latency, user satisfaction ratings, and system health status.
-- **User Authentication & Role Authorization**: JWT authentication with bcrypt password hashing supporting `STUDENT`, `FACULTY`, and `ADMIN` roles.
-- **Bonus Features**: Light/dark themes, collections, department filters, active document versions, metadata editing, highlighted source passages, conversation export, browser voice input/output, summaries, generated FAQs, analytics, hybrid search, reranking, and optional OCR for scanned PDFs.
+- **RAG Pipeline**: Text extraction, cleaning, chunking, embeddings, Qdrant indexing, hybrid retrieval, re-ranking, grounded generation, and source references.
+- **Supported Resources**: PDF, DOCX, TXT, CSV, Markdown, JSON, XML, HTML, RTF, logs, and common image files. Legacy `.doc` requires LibreOffice or `antiword`.
+- **Authenticated Contributions**: Students and faculty can contribute resources from Chatbot; administrators can upload and manage resources from Documents.
+- **Grounding Safeguards**: Insufficient-context and no-relevant-information responses, untrusted-document prompt handling, and source display.
+- **Authentication and Roles**: JWT sessions, bcrypt password hashing, and `STUDENT`, `FACULTY`, and `ADMIN` roles.
+- **Admin Management and Analytics**: Metadata editing, reprocessing, version replacement, deletion, collections, usage metrics, feedback, and system health.
+- **Deployment**: Working Next.js frontend on Vercel and FastAPI backend on Render Free for demonstrations.
 
-The theme switcher is in the top-right navigation and remembers the selected light or dark mode. In Chatbot, open the filter control to choose a department, collection, or answer language; use the microphone, Read, and Export controls for the additional chat features.
+### ✅ Optional features — implemented, with browser/provider limitations
+
+- Light/dark themes, department and collection filters, conversation history, rename/delete, export, suggested questions, source highlighting, feedback, extractive summaries, generated FAQs, browser voice input/output, multilingual prompt selection, OCR, hybrid search, and re-ranking.
+
+### ⚠️ Deliberate demo limitations
+
+- Render Free uses ephemeral storage, so uploaded resources and conversations can disappear after a restart or spin-down.
+- Gemini embeddings and answer generation are optional. Without an API key, deterministic local embeddings and grounded extractive synthesis are used.
+- Streaming responses, PPTX extraction, document approval workflows, rate limiting, and formal RAG benchmark evaluation are not included.
+
+The theme switcher is in the top-right navigation and remembers the selected light or dark mode. In Chatbot, open the contribution panel to add a resource, or open the filter control to choose a department, collection, or answer language; use the microphone, Read, and Export controls for the additional chat features.
 
 ---
 
@@ -157,7 +168,7 @@ To run the automated backend test suite:
 python -m pytest server/tests
 ```
 
-All 7 test suites verify:
+The 12-test suite across authentication, ingestion, RAG, and retrieval modules verifies:
 - Password hashing & JWT generation
 - Text cleaner & recursive document chunker
 - Embedding vector dimensions

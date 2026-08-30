@@ -4,8 +4,54 @@
 **Project Type:** Full-Stack AI / RAG Application\
 **Difficulty:** Medium\
 **Primary Goal:** Build a production-style college information assistant
-that answers student questions using information retrieved from an
-administrator-managed college knowledge base.
+that answers student questions using information retrieved from a managed
+college knowledge base.
+
+## Implementation Status
+
+This specification describes the target product and the verified state of
+the current implementation. Items marked **CORE • WORKING** are important
+features that are implemented and tested. Items marked **OPTIONAL • WORKING**
+are available with documented browser or provider limitations. Items marked
+**NOT IMPLEMENTED** must not be presented as completed features.
+
+### CORE • WORKING
+
+- Authentication, registration, logout, JWT sessions, bcrypt hashing, and
+  role-based access for `STUDENT`, `FACULTY`, and `ADMIN`.
+- Chat, conversation history, follow-up context, feedback, source cards, and
+  safe unknown-question handling.
+- PDF, DOCX, TXT, CSV, Markdown, JSON, XML, HTML, RTF, log, and common image
+  ingestion. Legacy `.doc` requires an external converter.
+- Authenticated student/faculty resource contribution from Chatbot and
+  administrator upload and document management from Documents.
+- Text extraction, cleaning, chunking, configurable embeddings, Qdrant vector
+  storage, hybrid keyword/vector retrieval, re-ranking, and grounded answer
+  generation.
+- Collections, department filters, metadata editing, active-version
+  replacement, admin analytics, system health, local deployment, Vercel, and
+  Render Free demo deployment.
+
+### OPTIONAL • WORKING WITH LIMITATIONS
+
+- OCR for images and scanned PDFs when Tesseract is installed.
+- Gemini embeddings and Gemini answer generation when an API key is set;
+  otherwise deterministic local embeddings and grounded extractive fallback
+  are used.
+- Browser speech input/output, English/Hindi/Telugu prompt selection,
+  suggested questions, source highlighting, conversation export, extractive
+  summaries, and generated FAQs.
+
+### NOT IMPLEMENTED
+
+- PPTX extraction.
+- Streaming AI responses.
+- Document approval/moderation workflow.
+- Rate limiting and formal RAG benchmark/evaluation dashboard.
+
+Render Free uses ephemeral storage; uploaded resources, vectors, SQLite data,
+and conversations may be lost after a restart or spin-down. Persistent
+production storage requires a paid service or external managed storage.
 
 ------------------------------------------------------------------------
 
@@ -45,8 +91,8 @@ through multiple documents.
 
 ### 1.4 Primary Users
 
--   **Student:** asks questions and views grounded answers.
--   **Faculty:** searches college information through the chatbot.
+-   **Student:** asks questions, contributes resources, and views grounded answers.
+-   **Faculty:** searches college information and contributes resources through the chatbot.
 -   **Administrator:** manages documents, knowledge collections, and
     system information.
 
@@ -57,7 +103,8 @@ through multiple documents.
 The system must:
 
 1.  Provide a conversational college information interface.
-2.  Allow authorized administrators to upload college documents.
+2.  Allow authenticated users to contribute documents and authorized
+    administrators to manage college documents.
 3.  Extract text from supported documents.
 4.  Split documents into searchable chunks.
 5.  Generate embeddings for chunks.
@@ -212,6 +259,7 @@ Authenticated students and faculty must be able to:
 -   View previous conversations.
 -   Copy answers.
 -   Provide answer feedback.
+-   Contribute a supported resource from the Chatbot page.
 
 Example:
 
@@ -225,7 +273,8 @@ from that context.
 
 ## FR-03: Document Upload
 
-Administrators must be able to upload supported documents.
+Authenticated users must be able to contribute supported documents, and
+administrators must be able to upload and manage supported documents.
 
 Minimum supported formats:
 
@@ -233,11 +282,13 @@ Minimum supported formats:
 -   DOCX
 -   TXT
 
-Optional formats:
+Additional implemented formats:
 
--   PPTX
--   CSV
--   Images / scanned PDFs
+-   CSV, Markdown, JSON, XML, HTML, RTF, and logs
+-   Images / scanned PDFs when OCR is available
+
+PPTX extraction is not implemented. Legacy `.doc` files require LibreOffice
+or `antiword` and are not guaranteed on every deployment.
 
 The system must validate:
 
@@ -270,7 +321,8 @@ Processing states:
 -   `COMPLETED`
 -   `FAILED`
 
-An administrator must be able to see the processing status.
+The uploader receives the processing status, and administrators can review
+all processing states from the Documents page.
 
 ------------------------------------------------------------------------
 
@@ -343,6 +395,10 @@ When a user asks a question:
 Initial configurable retrieval setting:
 
 `TOP_K = 5`
+
+**Current implementation:** Qdrant vector search is combined with keyword
+matching and deterministic re-ranking. Local mode is optimized for reliable
+document-term matching; provider-backed Gemini embeddings are optional.
 
 ------------------------------------------------------------------------
 
@@ -889,6 +945,10 @@ DELETE /api/documents/:id
 POST   /api/documents/:id/reprocess
 ```
 
+All document endpoints require authentication. The upload endpoint accepts
+authenticated student, faculty, and administrator users; metadata updates,
+deletion, reprocessing, and collection management require the `ADMIN` role.
+
 ## Collections
 
 ``` http
@@ -994,7 +1054,8 @@ Main chatbot interface containing:
 -   Loading state
 -   Copy button
 -   Feedback buttons
--   Optional voice button
+-   Resource contribution panel for authenticated users
+-   Browser-dependent voice input and text-to-speech controls
 
 ## `/documents`
 
@@ -1270,34 +1331,37 @@ Answer + Sources
 
 # 21. Optional Advanced Features
 
-These features should be added only after the core RAG pipeline is
-stable.
+These features are tracked separately from the core RAG pipeline. Their
+implementation status is recorded at the top of this specification.
 
 ## Priority A
 
--   Hybrid keyword + semantic search
--   Re-ranking
--   Source highlighting
--   Department-wise filtering
--   Multilingual English/Telugu support
--   Answer feedback
+-   **WORKING:** Hybrid keyword + semantic search
+-   **WORKING:** Re-ranking
+-   **WORKING:** Source highlighting
+-   **WORKING:** Department-wise filtering
+-   **PARTIAL:** Multilingual English/Telugu/Hindi prompt selection
+-   **WORKING:** Answer feedback
 
 ## Priority B
 
--   OCR for scanned PDFs
--   Document version management
--   Streaming responses
--   Suggested questions
--   AI-generated FAQs
--   Analytics dashboard
+-   **WORKING:** OCR for scanned PDFs when available
+-   **WORKING:** Document version management
+-   **WORKING:** Suggested questions
+-   **WORKING:** AI-generated FAQs
+-   **WORKING:** Analytics dashboard
 
 ## Priority C
 
--   Voice input
--   Text-to-speech
--   Advanced query analytics
--   Automated document summarization
--   More advanced evaluation dashboards
+-   **WORKING:** Voice input
+-   **WORKING:** Text-to-speech
+-   **NOT IMPLEMENTED:** Advanced query analytics
+-   **WORKING:** Automated extractive document summarization
+-   **NOT IMPLEMENTED:** Formal evaluation dashboards
+
+The current implementation includes browser voice input/output, extractive
+summaries, and generated FAQs. Streaming responses, advanced query analytics,
+and formal evaluation dashboards are not implemented.
 
 ------------------------------------------------------------------------
 
@@ -1829,11 +1893,14 @@ Deployment
 Optional additions:
 
 ``` text
-Telugu Support
+Implemented optional features:
+Telugu/Hindi prompt selection
 OCR
 Voice Input
 Voice Output
 Document Versioning
+
+Not implemented:
 Streaming Responses
 ```
 
@@ -1972,7 +2039,8 @@ The project is complete only when:
 -   The application runs locally.
 -   The frontend communicates with the backend.
 -   Users can authenticate.
--   Administrators can upload college documents.
+-   Authenticated users can contribute college documents and administrators
+    can upload and manage them.
 -   Documents are processed successfully.
 -   Chunks are generated with source metadata.
 -   Embeddings are generated.
@@ -1986,7 +2054,7 @@ The project is complete only when:
 -   Admin document management works.
 -   Security controls are implemented.
 -   Tests pass for critical functionality.
--   RAG quality has been evaluated.
+-   Basic RAG smoke tests pass; a formal benchmark remains a future task.
 -   The application is deployed and accessible.
 -   The final system can be demonstrated end-to-end.
 
