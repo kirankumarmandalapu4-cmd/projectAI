@@ -2,8 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   // OneDrive can turn stale .next/static cache entries into invalid links.
-  // Keep generated output in a dedicated ignored directory for stable local builds.
-  distDir: process.env.NEXT_DIST_DIR || '.next-build',
+  // Keep a dedicated local output directory, while using Vercel's expected .next
+  // directory during hosted builds.
+  distDir: process.env.VERCEL === '1'
+    ? '.next'
+    : (process.env.NEXT_DIST_DIR || '.next-build'),
 }
 
 module.exports = nextConfig
