@@ -5,6 +5,7 @@ from app.database.postgres import Base, engine, SessionLocal, ensure_sqlite_sche
 from app.models.user import User, UserRole
 from app.core.security import hash_password
 from app.services.storage import document_storage
+from app.database.qdrant import qdrant_db
 from app.api import auth, chat, documents, collections, feedback, admin
 
 # Apply repeatable migrations for external databases before the fallback
@@ -87,6 +88,7 @@ def startup_db_seed():
 @app.get("/api/health", tags=["Health"])
 def health_check():
     """Health check endpoint required by Section 11 & Phase 1 of spec.md."""
+    vector_status = qdrant_db.health_status()
     return {
         "status": "HEALTHY",
         "service": "RAG-Based College Chatbot API",
@@ -94,7 +96,10 @@ def health_check():
         "environment": settings.ENVIRONMENT,
         "database": "sqlite" if settings.DATABASE_URL.startswith("sqlite") else "postgresql",
         "documentStorage": "supabase" if document_storage.is_remote else "local",
-        "vectorStorage": "qdrant-cloud" if settings.QDRANT_URL else "qdrant-local",
+        # Keep the original string field for existing clients and expose the
+        # live collection details separately for diagnostics.
+        "vectorStorage": vector_status["mode"] if vector_status["connected"] else "unavailable",
+        "vectorStore": vector_status,
     }
 
 if __name__ == "__main__":

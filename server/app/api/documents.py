@@ -298,3 +298,24 @@ def reprocess_document(
     process_document_background(doc.id, doc.storage_url, doc.file_type, SessionLocal)
     db.refresh(doc)
     return doc
+
+
+@router.post("/reprocess-all")
+def reprocess_all_documents(
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    """Re-index all active documents after changing vector providers."""
+    documents = db.query(Document).filter(Document.is_active.is_(True)).all()
+    from app.database.postgres import SessionLocal
+
+    processed = 0
+    failed = []
+    for doc in documents:
+        vector_search_service.delete_document_chunks(doc.id)
+        if process_document_background(doc.id, doc.storage_url, doc.file_type, SessionLocal):
+            processed += 1
+        else:
+            failed.append({"id": doc.id, "name": doc.name})
+
+    return {"processed": processed, "failed": failed, "total": len(documents)}
