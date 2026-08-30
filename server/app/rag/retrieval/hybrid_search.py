@@ -37,11 +37,12 @@ class HybridSearchService:
             keyword_score = matches / max(1, len(query_terms))
             
             # Combine vector cosine score and keyword score
-            vector_score = chunk.get("score", 0.0)
-            # Equal weighting keeps local deterministic embeddings useful while
-            # still benefiting from semantic similarity when an API provider is
-            # configured.
-            combined_score = (vector_score * 0.5) + (keyword_score * 0.5)
+            vector_score = max(0.0, min(1.0, float(chunk.get("score", 0.0))))
+            # The free deployment uses deterministic local vectors, which are
+            # useful for ranking but are not a true language embedding. Give
+            # lexical evidence the stronger weight so an exact document fact
+            # is not rejected because of a weak or negative local cosine score.
+            combined_score = (vector_score * 0.35) + (keyword_score * 0.65)
             chunk["score"] = round(combined_score, 4)
 
         # Sort by combined score descending
