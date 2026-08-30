@@ -5,6 +5,10 @@ __pycache__/
 server/venv/
 
 # Local configuration and runtime data
+.env
+.env.*
+!.env.example
+!.env.local.example
 server/.env
 client/.env.local
 server/college_rag.db
@@ -18,3 +22,4 @@ server/node_modules/
 client/.next/
 client/.next-build/
 client/out/
+*.tsbuildinfo
