@@ -5,7 +5,11 @@ This project is a **full-stack** app with separate frontend and backend services
 | Component | Tech | Recommended Host |
 |-----------|------|------------------|
 | Frontend | Next.js 14 | **Vercel** |
-| Backend | FastAPI + SQLite + Qdrant | **Render** (Web Service + persistent disk) |
+| Backend | FastAPI + SQLite + Qdrant | **Render Free** (demo Web Service) |
+
+> **Free demo limitation:** Render Free has an ephemeral filesystem. Uploaded documents,
+> SQLite data, Qdrant vectors, users, and conversations can be lost when the service
+> restarts or spins down. Use a paid plan with a persistent disk for production data.
 
 ---
 
@@ -33,7 +37,7 @@ Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository.
    - **Runtime:** Docker
    - **Dockerfile Path:** `./server/Dockerfile`
    - **Health Check Path:** `/api/health`
-3. Add a **Persistent Disk** mounted at `/data` (1 GB).
+3. Select the **Free** compute plan. Do not add a persistent disk.
 4. Set environment variables:
 
    | Variable | Value |
@@ -73,8 +77,8 @@ Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository.
 ## Why This Split?
 
 - **Vercel** excels at Next.js static/SSR hosting with global CDN.
-- **Render** supports long-running Python processes, file uploads, SQLite, and persistent disk — required for the RAG pipeline.
-- Vercel alone cannot host the FastAPI backend with persistent local storage.
+- **Render Free** supports this backend for temporary demonstrations, but its filesystem is ephemeral.
+- Vercel alone cannot host the FastAPI backend.
 
 ---
 

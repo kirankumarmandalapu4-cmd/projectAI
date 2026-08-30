@@ -4,7 +4,7 @@ services:
     runtime: docker
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
-    plan: 0.5c-512mb
+    plan: free
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
@@ -23,7 +23,3 @@ services:
         value: local
       - key: ENVIRONMENT
         value: production
-    disk:
-      name: college-rag-data
-      mountPath: /data
-      sizeGB: 1
