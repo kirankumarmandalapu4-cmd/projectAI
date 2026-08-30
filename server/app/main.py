@@ -73,7 +73,7 @@ def health_check():
         "status": "HEALTHY",
         "service": "RAG-Based College Chatbot API",
         "version": "1.0.0",
-        "environment": "development"
+        "environment": settings.ENVIRONMENT
     }
 
 if __name__ == "__main__":
