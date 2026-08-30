@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
-import re
 from app.rag.retrieval.vector_search import vector_search_service
+from app.rag.retrieval.text_matching import normalized_terms, terms_match
 
 class HybridSearchService:
     @staticmethod
@@ -23,22 +23,17 @@ class HybridSearchService:
             collection_filter=collection_filter
         )
 
-        # Ignore common stopwords and compare normalized tokens rather than
-        # substrings (e.g. "fee" should not match an unrelated word).
-        stopwords = {
-            "a", "an", "and", "are", "is", "of", "on", "or", "the",
-            "to", "what", "when", "where", "which", "who", "how", "does",
-            "do", "for", "in", "about", "can", "i", "me", "my",
-        }
-        query_terms = {
-            term for term in re.findall(r"\b[a-z0-9]+\b", query.lower())
-            if term not in stopwords
-        }
+        # Ignore common stopwords and match common singular/plural variants
+        # so local retrieval remains useful without an embedding API.
+        query_terms = normalized_terms(query)
 
         for chunk in candidates:
-            text_terms = set(re.findall(r"\b[a-z0-9]+\b", chunk.get("text", "").lower()))
+            text_terms = normalized_terms(chunk.get("text", ""))
             # Calculate BM25-like keyword overlap match
-            matches = sum(1 for term in query_terms if term in text_terms)
+            matches = sum(
+                1 for query_term in query_terms
+                if any(terms_match(query_term, text_term) for text_term in text_terms)
+            )
             keyword_score = matches / max(1, len(query_terms))
             
             # Combine vector cosine score and keyword score

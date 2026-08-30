@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-import re
+from app.rag.retrieval.text_matching import normalized_terms, terms_match
 
 class RerankerService:
     @staticmethod
@@ -11,16 +11,19 @@ class RerankerService:
             return []
 
         query_lower = query.lower()
-        query_terms = set(re.findall(r"\b[a-z0-9]+\b", query_lower))
+        query_terms = normalized_terms(query)
         for chunk in chunks:
             text = chunk.get("text", "").lower()
-            text_terms = set(re.findall(r"\b[a-z0-9]+\b", text))
+            text_terms = normalized_terms(text)
             bonus = 0.0
             # Give bonus for exact key phrase matches
             if query_lower in text:
                 bonus += 0.15
             if query_terms:
-                overlap = len(query_terms & text_terms) / len(query_terms)
+                overlap = sum(
+                    1 for query_term in query_terms
+                    if any(terms_match(query_term, text_term) for text_term in text_terms)
+                ) / len(query_terms)
                 bonus += min(0.2, overlap * 0.2)
             
             chunk["final_score"] = min(1.0, round(chunk.get("score", 0.0) + bonus, 4))
